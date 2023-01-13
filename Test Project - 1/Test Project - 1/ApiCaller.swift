@@ -11,19 +11,17 @@ class ApiCaller {
     static let shared = ApiCaller()
     private init() {}
     
-    var delegate: ReloadProtocol?
-    
-    func getDataFromAPI(category: String?) -> NewsModel? {
+    func getDataFromAPI(category: String?, completion: @escaping ([Article]?)->Void) {
         var result: NewsModel!
         var tailURL = ""
         if let category = category {
             tailURL = "&category=\(category)"
         }
         guard let url = URL(string: Constants.apiLink+tailURL) else {
-            return nil
+            return
         }
         
-        let session = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        let session = URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 print(error.localizedDescription)
             }
@@ -31,17 +29,13 @@ class ApiCaller {
                 guard let data = data else { return }
                 do {
                     result = try JSONDecoder().decode(NewsModel.self, from: data)
-                    self?.delegate?.reloadNews(val: result.articles)
+                    completion(result.articles)
                 }
                 catch {
                     print(error.localizedDescription)
                 }
             }
         }
-        
         session.resume()
-        
-        return result
-        
     }
 }
